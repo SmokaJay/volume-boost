@@ -3,12 +3,12 @@
 Free, ad-free Android volume booster (LoudnessEnhancer + max streams). No ads, no tracking.
 
 **Package:** `com.maximus.volumeboost`  
-**Version:** 1.0.1  
+**Version:** 1.1.0  
 **minSdk:** 26 · **targetSdk:** 34
 
 ## Install (APK)
 
-Download the latest APK from **[GitHub Releases](https://github.com/SmokaJay/volume-boost/releases)** (e.g. `VolumeBoost-1.0.1.apk`).
+Download the latest APK from **[GitHub Releases](https://github.com/SmokaJay/volume-boost/releases)** (e.g. `VolumeBoost-1.1.0.apk`).
 
 ### On the phone
 1. Download the APK from the release page onto your phone.
@@ -16,24 +16,39 @@ Download the latest APK from **[GitHub Releases](https://github.com/SmokaJay/vol
 3. Open the APK → Install.
 4. On Android 13+, allow **Notifications** when asked (needed for the “Volume Boost active” status).
 
+> **Note:** If you already have 1.0.x installed and the new APK refuses to update, uninstall the old app first — the 1.1.0 sideload build may use a new signing key.
+
 ### Via adb
 ```bash
-adb install -r VolumeBoost-1.0.1.apk
+adb install -r VolumeBoost-1.1.0.apk
+# If signature mismatch:
+adb uninstall com.maximus.volumeboost && adb install VolumeBoost-1.1.0.apk
 ```
+
+## What’s new in 1.1.0
+
+- **Quick presets** — Off / Mild / Medium / Strong / Max chips (fine slider kept)
+- **Per-stream volume controls** — Music, Ring, Alarm, Notification + Max all
+- **Battery unrestricted nudge** — one-tap to exempt from battery optimization (dismissible)
+- **Quick Settings tile** — toggle boost from the shade (uses last saved level)
+- **Safer gain UX** — approximate dB label, warning above ~60%, optional soft-cap toggle (default off)
+- **UI polish** — clearer Active/Inactive status, version in about line
 
 ## What it does / doesn’t do
 
 **Does:**
-- Applies digital gain with Android’s `LoudnessEnhancer` (0–100% → 0–~2500 mB)
-- Maxes system volume streams (Music, Ring, Alarm, Notification, System)
+- Applies digital gain with Android’s `LoudnessEnhancer` (0–100% → 0–~25 dB / ~2500 mB)
+- Adjusts or maxes system volume streams (Music, Ring, Alarm, Notification, System)
 - Keeps boost attached via a lightweight foreground service while enabled
-- Saves last boost level and on/off state (DataStore)
+- Saves last boost level, on/off, and soft-cap preference (DataStore)
 - If boost was left on, it restarts after reboot (notification appears)
+- Quick Settings tile for one-tap toggle
 - No ads, analytics, IAP, or internet permission
 
 **Doesn’t:**
 - Cannot exceed the speaker’s hardware maximum without root — same limit as commercial “boosters”
 - High gain can clip/distort; start low and raise carefully
+- Wear OS is not supported
 
 ## Rebuild
 
@@ -47,7 +62,8 @@ export ANDROID_HOME=/path/to/android-sdk
 ./gradlew assembleRelease
 ```
 
-Release APK: `app/build/outputs/apk/release/app-release.apk`
+Release APK: `app/build/outputs/apk/release/app-release.apk`  
+Also copy to project root as `VolumeBoost-1.1.0.apk` for releases.
 
 ### Signing (for release / Play Store / updates)
 
@@ -72,6 +88,7 @@ keyPassword=YOUR_KEY_PASSWORD
 - `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_MEDIA_PLAYBACK` — keep boost attached
 - `POST_NOTIFICATIONS` (API 33+) — service notification
 - `RECEIVE_BOOT_COMPLETED` — restore boost after reboot if it was left on
+- `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` — optional battery-unrestricted prompt (OEM reliability)
 
 ## Open in Android Studio
 

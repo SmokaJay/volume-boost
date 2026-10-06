@@ -12,6 +12,11 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class BoostForegroundService : Service() {
 
@@ -53,6 +58,7 @@ class BoostForegroundService : Service() {
     }
 
     private lateinit var controller: LoudnessBoostController
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
@@ -65,6 +71,9 @@ class BoostForegroundService : Service() {
             ACTION_STOP -> {
                 controller.disable()
                 isRunning = false
+                serviceScope.launch {
+                    BoostPreferences(applicationContext).setBoostEnabled(false)
+                }
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 return START_NOT_STICKY
@@ -78,12 +87,14 @@ class BoostForegroundService : Service() {
                 val level = intent?.getFloatExtra(EXTRA_LEVEL, 50f) ?: 50f
                 val ok = controller.enable(level)
                 if (!ok) {
-                    // Still show notification briefly then stop — UI handles snackbar via prefs/broadcast
                     sendFailureBroadcast(controller.getLastError())
+                    serviceScope.launch {
+                        BoostPreferences(applicationContext).setBoostEnabled(false)
+                    }
                     stopSelf()
                     return START_NOT_STICKY
                 }
-                val notification = buildNotification()
+                val notification = buildNotification(level)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     ServiceCompat.startForeground(
                         this,
@@ -103,6 +114,7 @@ class BoostForegroundService : Service() {
     override fun onDestroy() {
         controller.disable()
         isRunning = false
+        serviceScope.cancel()
         super.onDestroy()
     }
 
@@ -121,7 +133,7 @@ class BoostForegroundService : Service() {
         nm.createNotificationChannel(channel)
     }
 
-    private fun buildNotification(): Notification {
+    private fun buildNotification(level: Float): Notification {
         val openIntent = PendingIntent.getActivity(
             this,
             0,
@@ -134,14 +146,15 @@ class BoostForegroundService : Service() {
             Intent(this, BoostForegroundService::class.java).apply { action = ACTION_STOP },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val pct = level.toInt()
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title))
-            .setContentText(getString(R.string.notification_text))
+            .setContentText(getString(R.string.notification_text_level, pct))
             .setSmallIcon(R.drawable.ic_speaker)
             .setContentIntent(openIntent)
             .setOngoing(true)
             .setSilent(true)
-            .addAction(0, "Turn off", stopIntent)
+            .addAction(0, getString(R.string.notification_turn_off), stopIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }

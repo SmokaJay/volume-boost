@@ -5,4 +5,9 @@
     <string name="notification_channel_desc">Shows when digital volume boost is active</string>
     <string name="notification_title">Volume Boost active</string>
     <string name="notification_text">Digital gain is applied to audio</string>
+    <string name="notification_text_level">Boost at %1$d%%</string>
+    <string name="notification_turn_off">Turn off</string>
+    <string name="tile_label">Volume Boost</string>
+    <string name="tile_subtitle_on">On · %1$d%%</string>
+    <string name="tile_subtitle_off">Off</string>
 </resources>
